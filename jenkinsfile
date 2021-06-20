@@ -15,7 +15,7 @@ pipeline {
   {
        agent { label 'demo' }
        steps { 
-          git branch: 'master', url: 'https://gitlab.com/debasis4/cicd'
+          git branch: 'master', url: 'https://github.com/debasis4/cicd'
        }
   }
 
@@ -130,7 +130,7 @@ pipeline {
     agent {label 'demo'}
 	when {environment name: 'BUILDME', value: 'yes'}
     steps {
-        git branch: 'master', url: 'https://gitlab.com/debasis4/cicd'
+        git branch: 'master', url: 'https://github.com/debasis4/cicd'
         step([$class: 'DockerComposeBuilder', dockerComposeFile: 'docker-compose.yml', option: [$class: 'StartAllServices'], useCustomDockerComposeFile: false])
     }          
   }
