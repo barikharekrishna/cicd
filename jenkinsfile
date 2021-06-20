@@ -22,12 +22,6 @@ pipeline {
   stage('PreCheck')
   {
   agent { label 'demo' }
-   when { 
-     anyOf {
-           changeset "samplejar/**"
-           changeset "samplewar/**"
-     }
-   }
    steps {
        script {
           env.BUILDME = "yes" // Set env variable to enable further Build Stages
@@ -72,9 +66,7 @@ pipeline {
    }
    steps {
      echo "Running Code Coverage ..."  
-	 dir ("./samplejar") {
-	   sh "mvn org.jacoco:jacoco-maven-plugin:0.5.5.201112152213:prepare-agent"
-	 }
+	 
    }
   }
   
@@ -83,65 +75,15 @@ pipeline {
     agent { label 'demo' }
     when {environment name: 'BUILDME', value: 'yes'}
     steps{
-     withSonarQubeEnv('demosonarqube') {
-	  dir ("./samplejar") {
-         sh 'mvn sonar:sonar'
+     echo "Running CODE ANALYSIS"
 	  }
-     } 
-    }
-  }
+     }
 
   stage("Quality Gate"){ 
     when {environment name: 'BUILDME', value: 'yes'}
     steps{
-	 script {
-	  timeout(time: 10, unit: 'MINUTES') { // Just in case something goes wrong, pipeline will be killed after a timeout
-        def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
-        if (qg.status != 'OK') {
-           error "Pipeline aborted due to quality gate failure: ${qg.status}"
-        }
-      }
-	 }
+	 echo  "Running Quality Gates"
     }
   }
-
-  stage('Stage Artifacts') 
-  {          
-   agent { label 'demo' }
-   when {environment name: 'BUILDME', value: 'yes'}
-   steps {          
-    script { 
-	    /* Define the Artifactory Server details */
-        def server = Artifactory.server 'demoartifactory'
-        def uploadSpec = """{
-            "files": [{
-            "pattern": "samplewar/target/samplewar.war", 
-            "target": "democicd"                   
-            }]
-        }"""
-        
-        /* Upload the war to  Artifactory repo */
-        server.upload(uploadSpec)
-    }
-   }
-  }
-
-  stage ('Deploy'){
-    agent {label 'demo'}
-	when {environment name: 'BUILDME', value: 'yes'}
-    steps {
-        git branch: 'master', url: 'https://github.com/debasis4/cicd'
-        step([$class: 'DockerComposeBuilder', dockerComposeFile: 'docker-compose.yml', option: [$class: 'StartAllServices'], useCustomDockerComposeFile: false])
-    }          
-  }
-  
-  stage ('Smoke Test'){
-    agent {label 'demo'}
-    when {environment name: 'BUILDME', value: 'yes'}
-    steps {
-      sh "sleep 10; chmod +x runsmokes.sh; ./runsmokes.sh"
-    }      
-  }
-
- } //End of Stages
+}
 }
