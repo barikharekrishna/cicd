@@ -152,8 +152,7 @@ pipeline {
 	   steps {
 	    echo "Checkout Deployment configuration files .."
 	    git branch: 'master', url: 'https://gitlab.com/debasis4/cicd.git'
-	    script {
-            kubernetesDeploy(kubeconfigId: 'demokubeconfig',configs: 'sampledeployment.yml')
+	    step([$class: 'DockerComposeBuilder', dockerComopseFile: 'docker-compose.yml' , option: [$class:]) 
 		}
 	   }
 	}
